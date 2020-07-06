@@ -2,21 +2,52 @@
 - name: This sets up an httpd webserver
   hosts: lab-hosts 
   become: yes
+  vars:
+    httpd_config_base_path: /etc/httpd
+    httpd_config_file: "{{ httpd_config_base_path }}/conf/httpd.conf" 
+    httpd_log_path: /var/log/httpd
+    httpd_conf_d_path: "{{ httpd_config_base_path }}/conf.d"
+    httpd_user: apache
+    httpd_group: apache
+    httpd_document_root: /var/www/html
+
   tasks:
-  - name: Install apache packages 
-    yum:
-      name: httpd
-      state: present
-  - name: ensure httpd is running
-    service:
-      name: httpd 
-      state: started
-  - name: Open port 80 for http access
-    firewalld:
-      service: http
-      permanent: true
-      state: enabled
-  - name: Restart the firewalld service to load in the firewall changes
-    service: 
-      name: firewalld 
-      state: restarted
+    - name: Install apache packages 
+      yum:
+        name: httpd
+        state: present
+
+    - name: ensure config directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+      with_items:
+        - "{{ httpd_conf_d_path }}"
+        - "{{ httpd_log_path }}"
+        - "{{ httpd_document_root }}"
+
+    - name: ensure apache folders are owned by root
+      shell: "chown -R {{httpd_user}}:{{httpd_group}} {{ httpd_config_base_path }}" 
+
+    - name: ensure apache folder configured with proper permissions
+      shell: "chmod -R o-w {{httpd_config_base_path}}"
+ 
+    - name: enable and start httpd
+      service: >
+        name=httpd
+        enabled=yes
+        state=started
+      ignore_errors: yes
+  
+    - name: Open port 80 for http access
+      firewalld:
+        service: http
+        permanent: true
+        state: enabled
+  
+    - name: Restart the firewalld service to load in the firewall changes
+      service: 
+        name: firewalld 
+        state: restarted
+  
