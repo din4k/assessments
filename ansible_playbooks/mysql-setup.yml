@@ -1,0 +1,55 @@
+---
+- name: Install MySQL  
+  hosts: lab-hosts 
+  become: yes
+  vars:
+    passwd_mysql_root: 1Blue8eagle!234
+    mysql_installable: mysql80-community-release-el7-1.noarch.rpm
+
+  tasks:
+    - name: Download MySQL Community Repo
+      get_url:
+        url: "https://dev.mysql.com/get/{{ mysql_installable }}"
+        dest: /tmp
+
+    - name: Install MySQL Community Repo
+      yum: 
+        name: "/tmp/{{ mysql_installable }}"
+        state: present
+
+    - name: Install MySQL packages
+      yum:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - mysql-community-server
+          - mysql-community-client
+
+    - name: Install MySQL-python, this is required for the task remove anonymous user
+      yum: 
+        name: MySQL-python 
+        state: present
+
+    - name: Start MySQL Server and enable it
+      service: 
+        name: mysqld 
+        state: started 
+        enabled: yes
+
+    - name: Acquire temporary root password
+      #shell: "awk -F': ' '$0 ~ \"temporary password\"{print $2}' /var/log/mysqld.log"
+      shell: "sudo egrep \"temporary password\" /var/log/mysqld.log|tail -1|awk -F': ' '{print $2}'"
+      register: mysql_root_password_temp
+
+    - name: Set new root password from default temporary password
+      shell: "mysql --user=root --password='{{ mysql_root_password_temp.stdout }}' --connect-expired-password --execute=\"ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ passwd_mysql_root }}'\""
+      ignore_errors: true
+
+    - name: Open mysql port on the firewall
+      firewalld:
+        port: 3306/tcp
+        permanent: true
+        state: enabled
+        immediate: yes
+     
