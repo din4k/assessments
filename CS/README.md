@@ -21,12 +21,28 @@ In their current setup, the traffic being inconsistent, requires over provisioni
 
 Assignment deliverables
 1) Included web_design.pdf
-2) Included sample code (developed in python, flask)
+2) Included sample code (developed using python, flask)
 	Pre-requisities:
-		a) mysql is deployed 
-                b) python v2.7 and above`
+		a) mysql is deployed
+                b) python v2.7 and above
+
 	Deployment steps:
 		a) Download the folder
 		b) Run pip install -r requirements.txt
+                c) Connect/Login to mysql console as:
+			mysql -u'<user>' -p'<password>'
+		d) Create database named "test" with table "users" as:
+
+			> create database test;
+			> use test;
+			Database changed
+			>
+			> CREATE TABLE users (
+    				-> id int(11) NOT NULL auto_increment,
+   				-> name varchar(100) NOT NULL,
+    				-> age int(3) NOT NULL,
+    				-> email varchar(100) NOT NULL,
+    				-> PRIMARY KEY (id)
+    				-> );
 
 
